@@ -4,6 +4,7 @@ import 'package:bubble/ball.dart';
 import 'package:bubble/button.dart';
 import 'package:bubble/info.dart';
 import 'package:bubble/player.dart';
+import 'package:bubble/result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -94,7 +95,6 @@ class _HomePageState extends State<HomePage> {
         if (lives == 0) {
           isGameRun = false;
           timer.cancel();
-          _showDialog();
         }
       }
 
@@ -170,14 +170,14 @@ class _HomePageState extends State<HomePage> {
 
   // Если шарик попал по игроку
   bool playerDies() {
-    if ((ballX - playerX).abs() < 0.05 && ballY > 0.95) {
+    if ((ballX - playerX).abs() < 0.1 && ballY > 0.95) {
       return true;
     } else {
       return false;
     }
   }
 
-  void resetGame() {
+  void continueGame() {
     isGameRun = false;
   }
 
@@ -186,23 +186,15 @@ class _HomePageState extends State<HomePage> {
     bulletHeight = 10;
   }
 
-  void _showDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.orange,
-          title: Center(
-            child: Column(
-              children: [
-                Text('You died'),
-                Text('You got $score points'),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void resetGame() {
+    setState(() {
+      isGameRun = false;
+      score = 0;
+      lives = 3;
+      playerX = 0;
+    });
+    resetBullet();
+    startGame();
   }
 
   double heightToCoordinate(double height) {
@@ -228,25 +220,27 @@ class _HomePageState extends State<HomePage> {
       },
       child: Column(
         children: [
-          Expanded(
-            flex: 4,
-            child: Container(
-              color: Colors.pink[100],
-              child: Center(
-                child: Stack(
-                  children: [
-                    Ball(ballX: ballX, ballY: ballY),
-                    MyBullet(
-                      bulletX: bulletX,
-                      bulletHeight: bulletHeight,
+          lives == 0
+              ? Result(score)
+              : Expanded(
+                  flex: 4,
+                  child: Container(
+                    color: Colors.pink[100],
+                    child: Center(
+                      child: Stack(
+                        children: [
+                          Ball(ballX: ballX, ballY: ballY),
+                          MyBullet(
+                            bulletX: bulletX,
+                            bulletHeight: bulletHeight,
+                          ),
+                          Player(playerX: playerX),
+                          MyInfo(score: score, lives: lives)
+                        ],
+                      ),
                     ),
-                    Player(playerX: playerX),
-                    MyInfo(score: score, lives: lives)
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ),
           Expanded(
             child: Container(
               color: Colors.grey,
@@ -256,11 +250,11 @@ class _HomePageState extends State<HomePage> {
                   !isGameRun
                       ? MyButton(
                           icon: Icons.play_arrow,
-                          function: startGame,
+                          function: lives != 0 ? startGame : resetGame,
                         )
                       : MyButton(
                           icon: Icons.cancel_outlined,
-                          function: resetGame,
+                          function: continueGame,
                         ),
                   MyButton(
                     icon: Icons.arrow_back,
